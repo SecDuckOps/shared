@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package duckops.auth.v1;
+
+option go_package = "duckops-shared/proto/gen/authv1";
+
+// ─────────────────────────────────────────────────────
+// Auth Service — API key validation and JWT management
+// ─────────────────────────────────────────────────────
+
+service AuthService {
+  // ValidateAPIKey checks if an agent's API key is valid
+  rpc ValidateAPIKey(ValidateAPIKeyRequest) returns (ValidateAPIKeyResponse);
+
+  // GetToken exchanges API key for a short-lived JWT
+  rpc GetToken(GetTokenRequest) returns (GetTokenResponse);
+}
+
+message ValidateAPIKeyRequest {
+  string api_key = 1;
+}
+
+message ValidateAPIKeyResponse {
+  bool valid = 1;
+  string user_id = 2;
+  repeated string permissions = 3;
+}
+
+message GetTokenRequest {
+  string api_key = 1;
+}
+
+message GetTokenResponse {
+  string token = 1;
+  int64 expires_at = 2;    // Unix timestamp
+}
