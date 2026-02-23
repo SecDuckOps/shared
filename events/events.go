@@ -27,6 +27,14 @@ type ScanTask struct {
 	Timestamp time.Time              `json:"timestamp"`
 }
 
+// ProcessedResult is published by ResultProcessor after enrichment and storage
+type ProcessedResult struct {
+	ScanID             string    `json:"scan_id"`
+	Status             string    `json:"status"`
+	VulnerabilityCount int       `json:"vulnerability_count"`
+	ProcessedAt        time.Time `json:"processed_at"`
+}
+
 // ScanResult is the final output from the Agent
 type ScanResult struct {
 	ScanID          string      `json:"scan_id"`

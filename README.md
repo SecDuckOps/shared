@@ -1,6 +1,6 @@
 # DuckOps Shared
 
-Shared proto definitions and Go types used by both `duckops-agent` and `server`.
+Shared proto definitions and Go types used by both `agent` and `server`.
 
 ## Contents
 
@@ -10,8 +10,8 @@ Shared proto definitions and Go types used by both `duckops-agent` and `server`.
 ## Usage
 
 ```go
-import "github.com/duckops/duckops-shared/types"
-import pb "github.com/duckops/duckops-shared/proto/gen"
+import "github.com/duckops/dshared/types"
+import pb "github.com/duckops/shared/proto/gen"
 ```
 
 ## Regenerate Proto

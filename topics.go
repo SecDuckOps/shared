@@ -7,4 +7,5 @@ const (
 	QueueCommandApproval = "commands.approval_needed"
 	QueueAgentTasks      = "agent_tasks"
 	QueueTaskResults     = "tasks.results"
+	QueueResultProcessed = "results.processed"
 )
