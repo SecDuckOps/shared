@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/SecDuckOps/Shared/llm/domain"
-	"github.com/SecDuckOps/Shared/types"
+	"github.com/SecDuckOps/shared/llm/domain"
+	"github.com/SecDuckOps/shared/types"
 )
 
 // headerTransport is an http.RoundTripper that adds custom headers to every request.

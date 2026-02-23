@@ -1,6 +1,17 @@
-package events
+package protocol
 
 import "time"
+
+// Topics/Queues
+const (
+	QueueRawInput        = "raw_inputs"
+	QueueCommandAccepted = "commands.accepted"
+	QueueCommandRejected = "commands.rejected"
+	QueueCommandApproval = "commands.approval_needed"
+	QueueAgentTasks      = "agent_tasks"
+	QueueTaskResults     = "tasks.results"
+	QueueResultProcessed = "results.processed"
+)
 
 // RawInputReceived represents the initial input from the user (CLI/UI)
 type RawInputReceived struct {

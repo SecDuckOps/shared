@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/SecDuckOps/Shared/llm/domain"
-	"github.com/SecDuckOps/Shared/types"
+	"github.com/SecDuckOps/shared/llm/domain"
+	"github.com/SecDuckOps/shared/types"
 	"github.com/sashabaranov/go-openai"
 )
 

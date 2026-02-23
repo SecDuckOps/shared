@@ -1,4 +1,4 @@
-module github.com/SecDuckOps/Shared
+module github.com/SecDuckOps/shared
 
 go 1.24.0
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/SecDuckOps/Shared/ports"
-	"github.com/SecDuckOps/Shared/types"
+	"github.com/SecDuckOps/shared/ports"
+	"github.com/SecDuckOps/shared/types"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )

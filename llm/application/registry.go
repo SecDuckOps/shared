@@ -3,8 +3,8 @@ package application
 import (
 	"sync"
 
-	"github.com/SecDuckOps/Shared/llm/domain"
-	"github.com/SecDuckOps/Shared/llm/infrastructure"
+	"github.com/SecDuckOps/shared/llm/domain"
+	"github.com/SecDuckOps/shared/llm/infrastructure"
 )
 
 // RegistryAdapter implements the domain.LLMRegistry interface.

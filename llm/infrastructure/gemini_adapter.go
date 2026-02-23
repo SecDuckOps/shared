@@ -3,8 +3,8 @@ package infrastructure
 import (
 	"context"
 
-	"github.com/SecDuckOps/Shared/llm/domain"
-	"github.com/SecDuckOps/Shared/types"
+	"github.com/SecDuckOps/shared/llm/domain"
+	"github.com/SecDuckOps/shared/types"
 
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/iterator"

@@ -9,7 +9,7 @@ The `Shared` library is a standard Go module used by the DuckOps ecosystem.
 Add it to your Go project:
 
 ```bash
-go get github.com/SecDuckOps/Shared
+go get github.com/SecDuckOps/shared
 ```
 
 | Package | Responsibility | Features |
