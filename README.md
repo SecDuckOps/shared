@@ -1,6 +1,19 @@
 # DuckOps Shared: The Core Foundation
 
-The `shared` repository provides the foundational cross-cutting concerns for the entire DuckOps ecosystem. It is designed to be highly modular, stateless, and strictly decoupled from internal business logic.
+## 📦 Contents
+
+The `Shared` library is a standard Go module used by the DuckOps ecosystem.
+
+### **Installation**
+
+Add it to your Go project:
+
+```bash
+go get github.com/SecDuckOps/Shared
+```
+
+| Package | Responsibility | Features |
+the foundational cross-cutting concerns for the entire DuckOps ecosystem. It is designed to be highly modular, stateless, and strictly decoupled from internal business logic.
 
 ---
 
