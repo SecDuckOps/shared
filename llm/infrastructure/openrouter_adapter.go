@@ -49,7 +49,7 @@ func NewOpenRouterAdapter(apiKey string, model string) *OpenRouterAdapter {
 	}
 
 	if model == "" {
-		model = "meta-llama/llama-3.1-70b-instruct"
+		model = "arcee-ai/trinity-large-preview:free"
 	}
 
 	return &OpenRouterAdapter{
