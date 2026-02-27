@@ -1,104 +1,96 @@
-# DuckOps Shared: The Core Foundation
+# 🦆 DuckOps Shared
 
-## 📦 Contents
+The core foundational library for the DuckOps DevSecOps ecosystem.
 
-The `Shared` library is a standard Go module used by the DuckOps ecosystem.
+---
 
-### **Installation**
+## Overview
 
-Add it to your Go project:
+The `shared` module contains all cross-cutting concerns, domain types, communication protocols, and utility abstractions used heavily by both the **DuckOps Server** and **DuckOps Agent**.
 
-```bash
-go get github.com/SecDuckOps/shared
+It is designed to be highly modular, completely stateless, and strictly decoupled from any internal business logic of the services that consume it.
+
+---
+
+## Architecture
+
+This module acts as the "Primitive Layer" of our Hexagonal Architecture.
+
+> 📖 Full architecture and dependency rules: [docs/architecture_guide.md](docs/architecture_guide.md)
+
+### Directory Structure
+
 ```
-
-| Package | Responsibility | Features |
-the foundational cross-cutting concerns for the entire DuckOps ecosystem. It is designed to be highly modular, stateless, and strictly decoupled from internal business logic.
+shared/
+├── docs/                           # Architecture documentation
+├── types/                          # Core domain structures (AppError)
+├── ports/                          # Common interface definitions
+├── logger/                         # Architecturally pure logging abstraction
+├── llm/                            # Structured Output LLM Registry
+├── events/                         # RabbitMQ Pub/Sub models
+├── proto/                          # gRPC definitions & stubs
+├── protocol/                       # Base communication contracts
+├── secrets/                        # Secret management primitives
+└── client/                         # Base client abstractions
+```
 
 ---
 
 ## 🏗️ 1. AppError System (`/types`)
 
-We reject standard Go `error` strings in favor of a structured, traceable error system.
-
-### **The AppError Struct**
+We reject standard Go `error` strings in favor of a structured, traceable error system that carries contextual metadata across service boundaries.
 
 ```go
-type AppError struct {
-    Code      ErrorCode              // Machine-readable (e.g., ErrCodeInternal)
-    Message   string                 // Human-readable context
-    Context   map[string]interface{} // Dynamic metadata
-    Timestamp time.Time              // When it happened
-    Cause     error                  // Wrapped underlying error
-}
+// Usage Strategy
+types.New(types.ErrCodeInvalidInput, "missing field")
+types.Wrap(err, types.ErrCodeInternal, "db save failed").WithContext("id", 123)
 ```
-
-### **Usage Strategy**
-
-- **Creation**: `types.New(types.ErrCodeInvalidInput, "missing field")`
-- **Wrapping**: `types.Wrap(err, types.ErrCodeInternal, "db save failed").WithContext("id", 123)`
-- **Assertion**: Use `errors.As(err, &appErr)` to extract metadata for logging or UI.
-
----
 
 ## 🪵 2. Architecturally Pure Logger (`/logger`)
 
-The logger implementation uses **Uber Zap** but ensures the domain layer remains agnostic through a port abstraction.
+A domain-agnostic logging abstraction wrapping Uber Zap.
 
-### **Abstraction (Port)**
+1. **Correlation ID**: Extracts `correlation_id` from Context automatically.
+2. **Level Mapping**: Automatically maps `AppError` codes to appropriate log levels.
+3. **Zap Independence**: Usage of `ports.Field{Key, Value}` prevents infrastructure leakage.
 
-```go
-type Logger interface {
-    Debug(ctx context.Context, msg string, fields ...Field)
-    Info(ctx context.Context, msg string, fields ...Field)
-    ErrorErr(ctx context.Context, err error, msg string, fields ...Field)
-}
-```
+## 🤖 3. Shared AI Capability (`/llm`)
 
-### **Key Features**
-
-1.  **Correlation ID**: Automatically extracts `correlation_id` from `context.Context` to link logs across distributed systems.
-2.  **Level Mapping**: Automatically maps `AppError` codes to log levels:
-    - `ErrCodeInvalidInput` / `ErrCodeNotFound` → **Warn**
-    - `ErrCodeInternal` / `ErrCodeAgentFailed` → **Error**
-3.  **Zap Independence**: All fields are passed as `ports.Field{Key, Value}`, preventing `zap` from leaking into your UseCases.
-
----
-
-## 🤖 3. Shared AI Capability Layer (`/llm`)
-
-A unified registry for AI model interaction, focusing on **Structured Output enforcement**.
-
-### **Registry Pattern**
-
-The `LLMRegistry` manages model lifecycle and configuration.
+A unified registry managing LLM provider lifecycle and enforcing structured JSON extraction.
 
 ```go
-sharedCfg := llmdomain.Config{
-    Default: "openai",
-    Providers: map[string]ProviderConfig{...}
-}
-registry, _ := llmapp.NewLLMRegistry(sharedCfg)
 llm := registry.MustGet("openai")
+// GenerateJSON strips markdown, calls the LLM, and unmarshals into the struct.
+err := llm.GenerateJSON(ctx, prompt, &myStruct)
 ```
-
-### **GenerateJSON (The Magic)**
-
-The `GenerateJSON` method centralizes complex AI output handling:
-
-1.  Calls the model with the provided prompt.
-2.  **Markdown Stripping**: Automatically removes ` ```json ` blocks.
-3.  **Validation**: Unmarshals directly into your target `interface{}` struct.
-4.  **Error Mapping**: Wraps failures into `ErrCodeInvalidInput` if the AI response misses the schema.
 
 ---
 
 ## 🖇️ Dependency Rules
 
-- **shared/types**: ZERO dependencies (used by everyone).
-- **shared/llm**: Depends on `shared/types`.
-- **shared/logger**: Depends on `shared/ports` and `shared/types`.
+- **`shared/types`**: ZERO dependencies.
+- **`shared/ports`**: ZERO dependencies.
+- **`shared/logger`**: Depends on `ports` and `types`.
+- **`shared/llm`**: Depends on `types` and `ports`.
+
+> ⚠️ **CRITICAL:** `shared` must never import `server` or `agent` packages.
 
 ---
 
-_DuckOps Shared: Engineering Consistency._
+## Testing
+
+```bash
+go test ./... -cover
+```
+
+---
+
+## Contributing
+
+1. **Stability**: Breakages here break the entire ecosystem.
+2. **Purity**: No business logic belongs in this repository.
+3. **Hexagonal Rules**: Adhere to the Port-and-Adapter separation for all external boundaries (like logging and LLMs).
+
+---
+
+_DuckOps Shared: Engineering Consistency._ 🦆

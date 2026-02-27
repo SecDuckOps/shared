@@ -11,6 +11,11 @@ const (
 	QueueAgentTasks      = "agent_tasks"
 	QueueTaskResults     = "tasks.results"
 	QueueResultProcessed = "results.processed"
+
+	// Subagent events (for distributed subagent coordination)
+	QueueSubagentSpawned   = "subagent.spawned"
+	QueueSubagentCompleted = "subagent.completed"
+	QueueSubagentFailed    = "subagent.failed"
 )
 
 // RawInputReceived represents the initial input from the user (CLI/UI)
