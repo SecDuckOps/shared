@@ -26,6 +26,9 @@ const (
 	// Security
 	ErrCodeAuthFailed       ErrorCode = "ERR_DUCKOPS_4000"
 	ErrCodePermissionDenied ErrorCode = "ERR_DUCKOPS_4003"
+
+	// Domain
+	ErrCodeInvalidTransition ErrorCode = "ERR_DUCKOPS_5000"
 )
 
 type AppError struct {
