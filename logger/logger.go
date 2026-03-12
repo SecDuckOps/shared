@@ -17,7 +17,8 @@ type Logger struct {
 }
 
 // New creates a new production-ready structured logger.
-func New(service string, level string) (*Logger, error) {
+// If outputPaths are provided, logs will be written to those paths (e.g., file paths) instead of stderr.
+func New(service string, level string, outputPaths ...string) (*Logger, error) {
 	var zapLevel zapcore.Level
 	if err := zapLevel.UnmarshalText([]byte(level)); err != nil {
 		zapLevel = zapcore.InfoLevel
@@ -27,6 +28,11 @@ func New(service string, level string) (*Logger, error) {
 	config.Level = zap.NewAtomicLevelAt(zapLevel)
 	config.EncoderConfig.TimeKey = "timestamp"
 	config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	if len(outputPaths) > 0 {
+		config.OutputPaths = outputPaths
+		config.ErrorOutputPaths = outputPaths
+	}
 
 	l, err := config.Build()
 	if err != nil {
