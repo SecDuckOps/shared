@@ -29,6 +29,10 @@ const (
 
 	// Domain
 	ErrCodeInvalidTransition ErrorCode = "ERR_DUCKOPS_5000"
+
+	// Task Engine
+	ErrCodeSecurityViolation ErrorCode = "ERR_DUCKOPS_6000"
+	ErrCodeExecutionFailed   ErrorCode = "ERR_DUCKOPS_6001"
 )
 
 type AppError struct {
