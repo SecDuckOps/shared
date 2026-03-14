@@ -29,6 +29,8 @@ const (
 
 	// Domain
 	ErrCodeInvalidTransition ErrorCode = "ERR_DUCKOPS_5000"
+	ErrCodeAlreadyExists     ErrorCode = "ERR_DUCKOPS_5001"
+	ErrCodeVersionConflict   ErrorCode = "ERR_DUCKOPS_5002"
 )
 
 type AppError struct {
