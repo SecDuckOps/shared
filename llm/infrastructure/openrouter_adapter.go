@@ -64,7 +64,7 @@ func (o *OpenRouterAdapter) Name() string {
 }
 
 // Generate implements the LLM Port using OpenAI's compatible completion struct
-func (o *OpenRouterAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (string, error) {
+func (o *OpenRouterAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
 	reqMessages := make([]openai.ChatCompletionMessage, len(messages))
 	for i, m := range messages {
 		reqMessages[i] = openai.ChatCompletionMessage{
@@ -80,14 +80,21 @@ func (o *OpenRouterAdapter) Generate(ctx context.Context, messages []domain.Mess
 	}
 	resp, err := o.client.CreateChatCompletion(ctx, req)
 	if err != nil {
-		return "", types.Wrap(err, types.ErrCodeAgentFailed, "openrouter generation failed")
+		return domain.GenerationResult{}, types.Wrap(err, types.ErrCodeAgentFailed, "openrouter generation failed")
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", types.New(types.ErrCodeAgentFailed, "empty response received from openrouter")
+		return domain.GenerationResult{}, types.New(types.ErrCodeAgentFailed, "empty response received from openrouter")
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	return domain.GenerationResult{
+		Content: resp.Choices[0].Message.Content,
+		Usage: domain.TokenUsage{
+			PromptTokens:     resp.Usage.PromptTokens,
+			CompletionTokens: resp.Usage.CompletionTokens,
+			TotalTokens:      resp.Usage.TotalTokens,
+		},
+	}, nil
 }
 
 // Stream implements the LLM Port with streaming support

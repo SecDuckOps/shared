@@ -44,7 +44,7 @@ func (l *LMStudioAdapter) Name() string {
 }
 
 // Generate implements the LLM Port using OpenAI's compatible completion struct
-func (l *LMStudioAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (string, error) {
+func (l *LMStudioAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
 	reqMessages := make([]openai.ChatCompletionMessage, len(messages))
 	for i, m := range messages {
 		reqMessages[i] = openai.ChatCompletionMessage{
@@ -61,14 +61,21 @@ func (l *LMStudioAdapter) Generate(ctx context.Context, messages []domain.Messag
 
 	resp, err := l.client.CreateChatCompletion(ctx, req)
 	if err != nil {
-		return "", types.Wrap(err, types.ErrCodeAgentFailed, "lmstudio generation failed")
+		return domain.GenerationResult{}, types.Wrap(err, types.ErrCodeAgentFailed, "lmstudio generation failed")
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", types.New(types.ErrCodeAgentFailed, "empty response received from lmstudio")
+		return domain.GenerationResult{}, types.New(types.ErrCodeAgentFailed, "empty response received from lmstudio")
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	return domain.GenerationResult{
+		Content: resp.Choices[0].Message.Content,
+		Usage: domain.TokenUsage{
+			PromptTokens:     resp.Usage.PromptTokens,
+			CompletionTokens: resp.Usage.CompletionTokens,
+			TotalTokens:      resp.Usage.TotalTokens,
+		},
+	}, nil
 }
 
 // Stream implements the LLM Port with streaming support

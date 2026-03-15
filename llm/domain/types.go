@@ -24,10 +24,22 @@ type GenerateOptions struct {
 	TopP        float32
 }
 
+type TokenUsage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+type GenerationResult struct {
+	Content string     `json:"content"`
+	Usage   TokenUsage `json:"usage"`
+}
+
 type ChatChunk struct {
 	Content string
 	Error   error
 	Done    bool
+	Usage   TokenUsage
 }
 
 type ProviderConfig struct {

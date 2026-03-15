@@ -40,9 +40,9 @@ func (g *GeminiAdapter) Name() string {
 }
 
 // Generate uses the persistent client, eliminating setup/teardown latency.
-func (g *GeminiAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (string, error) {
+func (g *GeminiAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
 	if len(messages) == 0 {
-		return "", nil
+		return domain.GenerationResult{}, nil
 	}
 
 	modelName := g.model
@@ -73,11 +73,11 @@ func (g *GeminiAdapter) Generate(ctx context.Context, messages []domain.Message,
 	lastMsg := messages[len(messages)-1]
 	resp, err := cs.SendMessage(ctx, genai.Text(lastMsg.Content))
 	if err != nil {
-		return "", types.Wrap(err, types.ErrCodeAgentFailed, "failed to generate from gemini API")
+		return domain.GenerationResult{}, types.Wrap(err, types.ErrCodeAgentFailed, "failed to generate from gemini API")
 	}
 
 	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
-		return "", types.New(types.ErrCodeAgentFailed, "empty response generated from gemini")
+		return domain.GenerationResult{}, types.New(types.ErrCodeAgentFailed, "empty response generated from gemini")
 	}
 
 	fullText := ""
@@ -87,7 +87,18 @@ func (g *GeminiAdapter) Generate(ctx context.Context, messages []domain.Message,
 		}
 	}
 
-	return fullText, nil
+	// Extract usage
+	usage := domain.TokenUsage{}
+	if resp.UsageMetadata != nil {
+		usage.PromptTokens = int(resp.UsageMetadata.PromptTokenCount)
+		usage.CompletionTokens = int(resp.UsageMetadata.CandidatesTokenCount)
+		usage.TotalTokens = int(resp.UsageMetadata.TotalTokenCount)
+	}
+
+	return domain.GenerationResult{
+		Content: fullText,
+		Usage:   usage,
+	}, nil
 }
 
 // Stream implements the LLM Port with streaming support
