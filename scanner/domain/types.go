@@ -48,7 +48,8 @@ type ScanResult struct {
 	Duration    string    `json:"duration"`
 	Findings    []Finding `json:"findings"`
 	Stats       ScanStats `json:"stats"`
-	Error       string    `json:"error,omitempty"` // populated if scan failed
+	Error       string    `json:"error,omitempty"`      // populated if scan failed
+	RawOutput   string    `json:"raw_output,omitempty"` // populated if parsing fails or explicitly requested
 }
 
 // ScanResultRecord is the Database entity representing a completed overall scan

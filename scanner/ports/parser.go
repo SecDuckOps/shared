@@ -9,4 +9,5 @@ type ResultParserPort interface {
 	Parse(raw []byte) ([]domain.Finding, error)
 	ScannerName() string
 	SupportedFormats() []string
+	GetScanCommand(target string) []string
 }
