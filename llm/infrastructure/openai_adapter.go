@@ -32,7 +32,7 @@ func (a *OpenAIAdapter) Name() string {
 }
 
 // Generate implements the standard LLM generate interface
-func (a *OpenAIAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (string, error) {
+func (a *OpenAIAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
 	reqMessages := make([]openai.ChatCompletionMessage, len(messages))
 	for i, m := range messages {
 		reqMessages[i] = openai.ChatCompletionMessage{
@@ -48,14 +48,21 @@ func (a *OpenAIAdapter) Generate(ctx context.Context, messages []domain.Message,
 	}
 	resp, err := a.client.CreateChatCompletion(ctx, req)
 	if err != nil {
-		return "", types.Wrap(err, types.ErrCodeAgentFailed, "openai generation failed")
+		return domain.GenerationResult{}, types.Wrap(err, types.ErrCodeAgentFailed, "openai generation failed")
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", types.New(types.ErrCodeAgentFailed, "empty response received from openai")
+		return domain.GenerationResult{}, types.New(types.ErrCodeAgentFailed, "empty response received from openai")
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	return domain.GenerationResult{
+		Content: resp.Choices[0].Message.Content,
+		Usage: domain.TokenUsage{
+			PromptTokens:     resp.Usage.PromptTokens,
+			CompletionTokens: resp.Usage.CompletionTokens,
+			TotalTokens:      resp.Usage.TotalTokens,
+		},
+	}, nil
 }
 
 // Stream implements the LLM Port with streaming support

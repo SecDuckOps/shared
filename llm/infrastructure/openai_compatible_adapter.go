@@ -48,7 +48,7 @@ func (a *OpenAICompatibleAdapter) Name() string {
 }
 
 // Generate implements the domain.LLM interface.
-func (a *OpenAICompatibleAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (string, error) {
+func (a *OpenAICompatibleAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
 	reqMessages := make([]openai.ChatCompletionMessage, len(messages))
 	for i, m := range messages {
 		reqMessages[i] = openai.ChatCompletionMessage{
@@ -80,14 +80,21 @@ func (a *OpenAICompatibleAdapter) Generate(ctx context.Context, messages []domai
 
 	resp, err := a.client.CreateChatCompletion(ctx, req)
 	if err != nil {
-		return "", types.Wrapf(err, types.ErrCodeAgentFailed, "%s provider error", a.Name())
+		return domain.GenerationResult{}, types.Wrapf(err, types.ErrCodeAgentFailed, "%s provider error", a.Name())
 	}
 
 	if len(resp.Choices) == 0 {
-		return "", types.Newf(types.ErrCodeAgentFailed, "received empty response from %s", a.Name())
+		return domain.GenerationResult{}, types.Newf(types.ErrCodeAgentFailed, "received empty response from %s", a.Name())
 	}
 
-	return resp.Choices[0].Message.Content, nil
+	return domain.GenerationResult{
+		Content: resp.Choices[0].Message.Content,
+		Usage: domain.TokenUsage{
+			PromptTokens:     resp.Usage.PromptTokens,
+			CompletionTokens: resp.Usage.CompletionTokens,
+			TotalTokens:      resp.Usage.TotalTokens,
+		},
+	}, nil
 }
 
 // Stream implements the domain.LLM interface.

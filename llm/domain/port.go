@@ -11,7 +11,7 @@ type LLM interface {
 		ctx context.Context,
 		messages []Message,
 		opts *GenerateOptions,
-	) (string, error)
+	) (GenerationResult, error)
 
 	// Stream response (non-blocking, low latency)
 	Stream(

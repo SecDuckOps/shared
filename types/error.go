@@ -26,6 +26,15 @@ const (
 	// Security
 	ErrCodeAuthFailed       ErrorCode = "ERR_DUCKOPS_4000"
 	ErrCodePermissionDenied ErrorCode = "ERR_DUCKOPS_4003"
+
+	// Domain
+	ErrCodeInvalidTransition ErrorCode = "ERR_DUCKOPS_5000"
+	ErrCodeAlreadyExists     ErrorCode = "ERR_DUCKOPS_5001"
+	ErrCodeVersionConflict   ErrorCode = "ERR_DUCKOPS_5002"
+
+	// Task Engine
+	ErrCodeSecurityViolation ErrorCode = "ERR_DUCKOPS_6000"
+	ErrCodeExecutionFailed   ErrorCode = "ERR_DUCKOPS_6001"
 )
 
 type AppError struct {
