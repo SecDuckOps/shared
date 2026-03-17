@@ -63,6 +63,11 @@ func (o *OpenRouterAdapter) Name() string {
 	return "openrouter"
 }
 
+// Model returns the actually used model
+func (o *OpenRouterAdapter) Model() string {
+	return o.model
+}
+
 // Generate implements the LLM Port using OpenAI's compatible completion struct
 func (o *OpenRouterAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
 	reqMessages := make([]openai.ChatCompletionMessage, len(messages))

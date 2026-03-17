@@ -25,7 +25,7 @@ func (p *TfsecParser) SupportedFormats() []string {
 
 func (p *TfsecParser) GetScanCommand(target string) []string {
 	// TFSec scan command with JSON output
-	return []string{".", "--format", "json"}
+	return []string{".", "--format", "json", "-q"}
 }
 
 type tfsecOutput struct {

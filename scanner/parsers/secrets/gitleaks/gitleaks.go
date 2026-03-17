@@ -25,7 +25,7 @@ func (p *GitleaksParser) SupportedFormats() []string {
 
 func (p *GitleaksParser) GetScanCommand(target string) []string {
 	// Gitleaks detect command with JSON report
-	return []string{"detect", "--source", ".", "--report-path", "/dev/stdout", "--no-git", "--exit-code", "0"}
+	return []string{"detect", "--source", ".", "--report-format", "json", "--report-path", "/dev/stdout", "--no-git", "--exit-code", "0"}
 }
 
 type gitleaksFinding struct {

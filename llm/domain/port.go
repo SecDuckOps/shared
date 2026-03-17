@@ -23,6 +23,9 @@ type LLM interface {
 	// Optional but very useful
 	HealthCheck(ctx context.Context) error
 
+	// Return the actual model being used
+	Model() string
+
 	// GenerateJSON handles structured output enforcement
 	GenerateJSON(ctx context.Context, messages []Message, opts *GenerateOptions, target interface{}) error
 }

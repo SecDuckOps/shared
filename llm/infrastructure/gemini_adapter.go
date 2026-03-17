@@ -20,7 +20,7 @@ type GeminiAdapter struct {
 // NewGeminiAdapter instantiates a persistent Gemini client for high performance.
 func NewGeminiAdapter(ctx context.Context, apiKey string, model string) (*GeminiAdapter, error) {
 	if model == "" {
-		model = "gemini-1.5-flash"
+		model = "qwen/qwen3-coder:free"
 	}
 
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
@@ -36,7 +36,12 @@ func NewGeminiAdapter(ctx context.Context, apiKey string, model string) (*Gemini
 
 // Name identifies this LLM port
 func (g *GeminiAdapter) Name() string {
-	return "gemini"
+	return "Gemini"
+}
+
+// Model returns the actually used model
+func (g *GeminiAdapter) Model() string {
+	return g.model
 }
 
 // Generate uses the persistent client, eliminating setup/teardown latency.

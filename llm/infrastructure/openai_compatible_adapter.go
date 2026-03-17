@@ -47,6 +47,11 @@ func (a *OpenAICompatibleAdapter) Name() string {
 	return a.providerName
 }
 
+// Model returns the actually used model
+func (a *OpenAICompatibleAdapter) Model() string {
+	return a.model
+}
+
 // Generate implements the domain.LLM interface.
 func (a *OpenAICompatibleAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
 	reqMessages := make([]openai.ChatCompletionMessage, len(messages))
