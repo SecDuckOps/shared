@@ -17,25 +17,38 @@ const (
 	ScannerTypeCustom     ScannerType = "CUSTOM"
 )
 
+// Location identifies exactly where in the codebase a finding was detected.
+type Location struct {
+	File   string `json:"file"`
+	Line   int    `json:"line,omitempty"`
+	Column int    `json:"column,omitempty"`
+}
+
 // Finding represents a single identified vulnerability or security issue.
 type Finding struct {
 	ID          string      `json:"id"`
 	Title       string      `json:"title"`
 	Description string      `json:"description"`
 	Severity    Severity    `json:"severity"`
-	Scanner     string      `json:"scanner"`       // e.g., "trivy", "semgrep"
-	Type        ScannerType `json:"type"`          // e.g., SAST, IAC
-	File        string      `json:"file,omitempty"`
-	Line        int         `json:"line,omitempty"`
-	Match       string      `json:"match,omitempty"`     // Raw matched code/text
-	Remediation string      `json:"remediation,omitempty"` // Suggested fix
-	CVE         string      `json:"cve,omitempty"`       // Common Vulnerabilities and Exposures ID if applicable
+	Scanner     string      `json:"scanner"`             // e.g., "trivy", "semgrep"
+	Type        ScannerType `json:"type"`                // e.g., SAST, IAC
+	Location    Location    `json:"location,omitempty"`  // structured location
+	File        string      `json:"file,omitempty"`      // kept for backward compat
+	Line        int         `json:"line,omitempty"`      // kept for backward compat
+	Match       string      `json:"match,omitempty"`
+	Remediation string      `json:"remediation,omitempty"`
+	CVE         string      `json:"cve,omitempty"`
+	Metadata    map[string]any `json:"metadata,omitempty"` // scanner-specific extras
 }
 
-// ScanStats holds aggregated metric counts for a scan
+// ScanStats holds timing and exit metrics for a single scanner run.
 type ScanStats struct {
-	TotalFinds int            `json:"total_findings"`
-	BySeverity map[Severity]int `json:"by_severity"`
+	Duration   time.Duration `json:"duration"`
+	ExitCode   int           `json:"exit_code"`
+	StartedAt  time.Time     `json:"started_at"`
+	FinishedAt time.Time     `json:"finished_at"`
+	TotalFinds int           `json:"total_findings"`
+	BySeverity map[Severity]int `json:"by_severity,omitempty"`
 }
 
 // ScanResult contains the full parsed output from a single scanner run

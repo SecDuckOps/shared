@@ -43,6 +43,11 @@ func (l *LMStudioAdapter) Name() string {
 	return "lmstudio"
 }
 
+// Model returns the actually used model
+func (l *LMStudioAdapter) Model() string {
+	return l.model
+}
+
 // Generate implements the LLM Port using OpenAI's compatible completion struct
 func (l *LMStudioAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
 	reqMessages := make([]openai.ChatCompletionMessage, len(messages))

@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"time"
 
@@ -61,6 +62,11 @@ func NewOpenRouterAdapter(apiKey string, model string) *OpenRouterAdapter {
 // Name identifies this LLM port
 func (o *OpenRouterAdapter) Name() string {
 	return "openrouter"
+}
+
+// Model returns the actually used model
+func (o *OpenRouterAdapter) Model() string {
+	return o.model
 }
 
 // Generate implements the LLM Port using OpenAI's compatible completion struct
@@ -126,7 +132,7 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, messages []domain.Messag
 		for {
 			response, err := stream.Recv()
 			if err != nil {
-				if err.Error() == "EOF" {
+				if err == io.EOF {
 					return
 				}
 				ch <- domain.ChatChunk{Error: err}

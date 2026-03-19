@@ -1,0 +1,5 @@
+# ================================================
+# DuckOps Shared — Code Owners
+# ================================================
+# ⚠️ Changes here affect BOTH agent and server.
+*  @Backend-Team

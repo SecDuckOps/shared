@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"io"
 
 	"github.com/SecDuckOps/shared/llm/domain"
 	"github.com/SecDuckOps/shared/types"
@@ -30,6 +31,12 @@ func NewOpenAIAdapter(apiKey string, model string) *OpenAIAdapter {
 func (a *OpenAIAdapter) Name() string {
 	return "openai"
 }
+
+// Model returns the actually used model
+func (a *OpenAIAdapter) Model() string {
+	return a.model
+}
+
 
 // Generate implements the standard LLM generate interface
 func (a *OpenAIAdapter) Generate(ctx context.Context, messages []domain.Message, opts *domain.GenerateOptions) (domain.GenerationResult, error) {
@@ -94,7 +101,7 @@ func (a *OpenAIAdapter) Stream(ctx context.Context, messages []domain.Message, o
 		for {
 			response, err := stream.Recv()
 			if err != nil {
-				if err.Error() == "EOF" {
+				if err == io.EOF {
 					return
 				}
 				ch <- domain.ChatChunk{Error: err}
