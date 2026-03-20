@@ -30,3 +30,6 @@ Thumbs.db
 logs/*
 *.log
 !logs/.keep
+
+# Other
+proto

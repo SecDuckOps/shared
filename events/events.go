@@ -86,8 +86,9 @@ const (
 	SubagentEventStatus   SubagentEventType = "status_change"
 	SubagentEventRetry    SubagentEventType = "retry"
 	SubagentEventPaused   SubagentEventType = "paused"
-	SubagentEventResumed  SubagentEventType = "resumed"
-	SubagentEventThought  SubagentEventType = "thought"
+	SubagentEventResumed     SubagentEventType = "resumed"
+	SubagentEventThought     SubagentEventType = "thought"
+	SubagentEventStreamToken SubagentEventType = "stream_token"
 
 	// ── Typed lifecycle events (duckops AgentEvent parity) ──────────────
 	// TurnStarted is emitted at the beginning of each LLM inference turn.
