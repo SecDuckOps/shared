@@ -23,23 +23,29 @@ func (n NoOpAuth) Handle(next http.Handler) http.Handler { return next }
 
 // Server encapsulates the HTTP multiplexer and middleware dependencies.
 type Server struct {
-	mux         *http.ServeMux
-	auth        AuthMiddleware
-	rateLimiter *IPRateLimiter
-	logger      *logger.Logger
+	mux            *http.ServeMux
+	auth           AuthMiddleware
+	rateLimiter    *IPRateLimiter
+	logger         *logger.Logger
+	sessionHandler *SessionHandler
 }
 
 // NewServer bootstraps a fresh Server, its routes, and its shared state.
-func NewServer(auth AuthMiddleware, log *logger.Logger) *Server {
+func NewServer(auth AuthMiddleware, log *logger.Logger, sessionHandler *SessionHandler) *Server {
+	if sessionHandler == nil {
+		panic("sessionHandler cannot be nil")
+	}
+
 	if auth == nil {
 		auth = NoOpAuth{}
 	}
 
 	s := &Server{
-		mux:         http.NewServeMux(),
-		auth:        auth,
-		rateLimiter: NewIPRateLimiter(rate.Limit(10), 20), // 10 req/s, burst 20
-		logger:      log,
+		mux:            http.NewServeMux(),
+		auth:           auth,
+		rateLimiter:    NewIPRateLimiter(rate.Limit(10), 20), // 10 req/s, burst 20
+		logger:         log,
+		sessionHandler: sessionHandler,
 	}
 
 	s.routes()
@@ -61,17 +67,16 @@ func (s *Server) Handler() http.Handler {
 // routes registers exactly 9 endpoints using native Go 1.22+ method patterns.
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /health", s.handleHealth)
-	
-	// Temporarily point all endpoints to the Not Implemented stub
-	s.mux.HandleFunc("POST /v1/sessions", s.handleNotImplemented)
-	s.mux.HandleFunc("GET /v1/sessions", s.handleNotImplemented)
-	s.mux.HandleFunc("GET /v1/sessions/{id}", s.handleNotImplemented)
-	s.mux.HandleFunc("DELETE /v1/sessions/{id}", s.handleNotImplemented)
-	
-	s.mux.HandleFunc("GET /v1/sessions/{id}/messages", s.handleNotImplemented)
-	s.mux.HandleFunc("POST /v1/sessions/{id}/messages", s.handleNotImplemented)
-	
-	s.mux.HandleFunc("GET /v1/sessions/{id}/checkpoints", s.handleNotImplemented)
+
+	s.mux.HandleFunc("POST /v1/sessions", s.sessionHandler.handleCreateSession)
+	s.mux.HandleFunc("GET /v1/sessions", s.sessionHandler.handleListSessions)
+	s.mux.HandleFunc("GET /v1/sessions/{id}", s.sessionHandler.handleGetSession)
+	s.mux.HandleFunc("DELETE /v1/sessions/{id}", s.sessionHandler.handleDeleteSession)
+
+	s.mux.HandleFunc("GET /v1/sessions/{id}/messages", s.sessionHandler.handleListMessages)
+	s.mux.HandleFunc("POST /v1/sessions/{id}/messages", s.sessionHandler.handleCreateMessage)
+
+	s.mux.HandleFunc("GET /v1/sessions/{id}/checkpoints", s.sessionHandler.handleListCheckpoints)
 	s.mux.HandleFunc("GET /v1/sessions/{id}/events", s.handleNotImplemented)
 }
 
