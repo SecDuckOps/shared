@@ -1,11 +1,9 @@
 package transport
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/SecDuckOps/shared/logger"
-	"github.com/SecDuckOps/shared/types"
 	"golang.org/x/time/rate"
 )
 
@@ -28,12 +26,21 @@ type Server struct {
 	rateLimiter    *IPRateLimiter
 	logger         *logger.Logger
 	sessionHandler *SessionHandler
+	sseHandler     *SSEHandler
 }
 
 // NewServer bootstraps a fresh Server, its routes, and its shared state.
-func NewServer(auth AuthMiddleware, log *logger.Logger, sessionHandler *SessionHandler) *Server {
+func NewServer(
+	auth AuthMiddleware, 
+	log *logger.Logger, 
+	sessionHandler *SessionHandler,
+	sseHandler *SSEHandler,
+) *Server {
 	if sessionHandler == nil {
 		panic("sessionHandler cannot be nil")
+	}
+	if sseHandler == nil {
+		panic("sseHandler cannot be nil")
 	}
 
 	if auth == nil {
@@ -46,6 +53,7 @@ func NewServer(auth AuthMiddleware, log *logger.Logger, sessionHandler *SessionH
 		rateLimiter:    NewIPRateLimiter(rate.Limit(10), 20), // 10 req/s, burst 20
 		logger:         log,
 		sessionHandler: sessionHandler,
+		sseHandler:     sseHandler,
 	}
 
 	s.routes()
@@ -77,7 +85,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /v1/sessions/{id}/messages", s.sessionHandler.handleCreateMessage)
 
 	s.mux.HandleFunc("GET /v1/sessions/{id}/checkpoints", s.sessionHandler.handleListCheckpoints)
-	s.mux.HandleFunc("GET /v1/sessions/{id}/events", s.handleNotImplemented)
+	s.mux.HandleFunc("GET /v1/sessions/{id}/events", s.sseHandler.handleSubscribeEvents)
 }
 
 // --- Handlers ---
@@ -86,12 +94,4 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"status":"ok"}`))
-}
-
-// handleNotImplemented serves a 501 using the domain's global error structure
-func (s *Server) handleNotImplemented(w http.ResponseWriter, r *http.Request) {
-	appErr := types.New(types.ErrCodeInternal, "endpoint not implemented")
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotImplemented)
-	json.NewEncoder(w).Encode(appErr.ToMap())
 }

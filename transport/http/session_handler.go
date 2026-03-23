@@ -218,20 +218,37 @@ func (h *SessionHandler) handleListCheckpoints(w http.ResponseWriter, r *http.Re
 	writeJSON(w, http.StatusOK, list)
 }
 
-// publishEvent wraps bus payload encoding and guarantees fire-and-forget handling by catching errors at the logger level.
+// publishEvent wraps bus payload encoding, embeds the event type if the payload is a map,
+// and guarantees fire-and-forget handling by catching errors at the logger level.
+// It explicitly enables SSE streams by mirrored publishing to both a global topic and a session-specific topic.
 func (h *SessionHandler) publishEvent(ctx context.Context, topic string, payload any) {
-	b, err := json.Marshal(payload)
+	var b []byte
+	var err error
+	var sessionID string
+
+	if m, ok := payload.(map[string]string); ok {
+		m["type"] = topic // Embed event type
+		sessionID = m["session_id"]
+		b, err = json.Marshal(m)
+	} else {
+		b, err = json.Marshal(payload)
+	}
+
 	if err != nil {
 		h.logger.ErrorErr(ctx, err, "Failed to marshal JSON for event bus payload", ports.Field{Key: "topic", Value: topic})
 		return
 	}
 
-	msg := bus.Message{
-		Topic:   topic,
-		Payload: b,
+	// 1. Always publish to the standard global topic for backend subscribers
+	if err := h.bus.Publish(ctx, bus.Message{Topic: topic, Payload: b}); err != nil {
+		h.logger.ErrorErr(ctx, err, "Failed to publish global event to bus", ports.Field{Key: "topic", Value: topic})
 	}
 
-	if err := h.bus.Publish(ctx, msg); err != nil {
-		h.logger.ErrorErr(ctx, err, "Failed to publish event message to the bus", ports.Field{Key: "topic", Value: topic})
+	// 2. Mirror strictly to session:{id} so the SSE endpoint receives it seamlessly!
+	if sessionID != "" {
+		topicMirrored := "session:" + sessionID
+		if err := h.bus.Publish(ctx, bus.Message{Topic: topicMirrored, Payload: b}); err != nil {
+			h.logger.ErrorErr(ctx, err, "Failed to mirror session event to bus", ports.Field{Key: "topic", Value: topicMirrored})
+		}
 	}
 }
