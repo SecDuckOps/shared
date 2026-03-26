@@ -4,11 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/SecDuckOps/shared/llm/domain"
 	"github.com/SecDuckOps/shared/types"
 )
+
+const defaultCompletionMaxTokens = 1024
+
+var affordableTokenBudgetPattern = regexp.MustCompile(`(?i)can only afford\s+(\d+)`)
 
 // headerTransport is an http.RoundTripper that adds custom headers to every request.
 type headerTransport struct {
@@ -32,6 +38,41 @@ func newHeaderTransport(headers map[string]string, base http.RoundTripper) http.
 		base:    base,
 		headers: headers,
 	}
+}
+
+func resolveMaxTokens(opts *domain.GenerateOptions) int {
+	if opts != nil && opts.MaxTokens > 0 {
+		return opts.MaxTokens
+	}
+	return defaultCompletionMaxTokens
+}
+
+func affordableRetryMaxTokens(err error, requested int) (int, bool) {
+	if err == nil || requested <= 1 {
+		return 0, false
+	}
+
+	match := affordableTokenBudgetPattern.FindStringSubmatch(err.Error())
+	if len(match) != 2 {
+		return 0, false
+	}
+
+	affordable, parseErr := strconv.Atoi(match[1])
+	if parseErr != nil || affordable <= 0 {
+		return 0, false
+	}
+	if affordable >= requested {
+		return 0, false
+	}
+
+	retryMaxTokens := affordable
+	if affordable > 128 {
+		retryMaxTokens = affordable - 32
+	}
+	if retryMaxTokens <= 0 {
+		return 0, false
+	}
+	return retryMaxTokens, true
 }
 
 // generateJSON handles structured output enforcement by stripping markdown and unmarshaling.

@@ -12,8 +12,9 @@ const (
 
 	// General
 	ErrCodeInternal     ErrorCode = "ERR_DUCKOPS_1000"
-	ErrCodeNotFound     ErrorCode = "ERR_DUCKOPS_1001"
-	ErrCodeInvalidInput ErrorCode = "ERR_DUCKOPS_1002"
+	ErrCodeNotFound        ErrorCode = "ERR_DUCKOPS_1001"
+	ErrCodeInvalidInput    ErrorCode = "ERR_DUCKOPS_1002"
+	ErrCodeTooManyRequests ErrorCode = "ERR_DUCKOPS_1003"
 
 	// Agent
 	ErrCodeAgentFailed ErrorCode = "ERR_DUCKOPS_2001"

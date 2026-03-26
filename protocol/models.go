@@ -1,6 +1,9 @@
 package protocol
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 // Topics/Queues
 const (
@@ -11,6 +14,7 @@ const (
 	QueueAgentTasks      = "agent_tasks"
 	QueueTaskResults     = "tasks.results"
 	QueueResultProcessed = "results.processed"
+	QueueScanCompleted   = "scan.completed"
 
 	// Subagent events (for distributed subagent coordination)
 	QueueSubagentSpawned   = "subagent.spawned"
@@ -45,10 +49,16 @@ type ScanTask struct {
 
 // ProcessedResult is published by ResultProcessor after enrichment and storage
 type ProcessedResult struct {
-	ScanID             string    `json:"scan_id"`
-	Status             string    `json:"status"`
-	VulnerabilityCount int       `json:"vulnerability_count"`
-	ProcessedAt        time.Time `json:"processed_at"`
+	ScanID             string          `json:"scan_id"`
+	Target             string          `json:"target,omitempty"`
+	ScannerType        string          `json:"scanner_type,omitempty"`
+	Status             string          `json:"status"`
+	VulnerabilityCount int             `json:"vulnerability_count"`
+	StartedAt          int64           `json:"started_at,omitempty"`
+	FinishedAt         int64           `json:"finished_at,omitempty"`
+	Vulnerabilities    json.RawMessage `json:"vulnerabilities,omitempty"`
+	Logs               json.RawMessage `json:"logs,omitempty"`
+	ProcessedAt        time.Time       `json:"processed_at"`
 }
 
 // ScanResult is the final output from the Agent

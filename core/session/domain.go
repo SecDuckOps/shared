@@ -132,7 +132,7 @@ func syncTransitions(from SyncStatus) []SyncStatus {
 	}
 }
 
-//  Factory & Methods
+//  Factory & Methods BUSINESS LOGIC
 // ============================================================================
 
 // creates a validated Session with sensible defaults

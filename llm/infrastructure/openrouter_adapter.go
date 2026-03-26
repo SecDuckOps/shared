@@ -2,8 +2,8 @@ package infrastructure
 
 import (
 	"context"
-	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/SecDuckOps/shared/llm/domain"
@@ -49,8 +49,12 @@ func NewOpenRouterAdapter(apiKey string, model string) *OpenRouterAdapter {
 		),
 	}
 
-	if model == "" {
-		model = "arcee-ai/trinity-large-preview:free"
+	// Clean model name (e.g. "openrouter/model-id" -> "model-id")
+	if strings.HasPrefix(model, "openrouter/") {
+		model = strings.TrimPrefix(model, "openrouter/")
+	}
+	if strings.HasPrefix(model, "custom/") {
+		model = strings.TrimPrefix(model, "custom/")
 	}
 
 	return &OpenRouterAdapter{
@@ -79,12 +83,18 @@ func (o *OpenRouterAdapter) Generate(ctx context.Context, messages []domain.Mess
 		}
 	}
 
+	maxTokens := resolveMaxTokens(opts)
+
 	req := openai.ChatCompletionRequest{
 		Model:     o.model,
 		Messages:  reqMessages,
-		MaxTokens: 5000,
+		MaxTokens: maxTokens,
 	}
 	resp, err := o.client.CreateChatCompletion(ctx, req)
+	if retryMaxTokens, ok := affordableRetryMaxTokens(err, req.MaxTokens); ok {
+		req.MaxTokens = retryMaxTokens
+		resp, err = o.client.CreateChatCompletion(ctx, req)
+	}
 	if err != nil {
 		return domain.GenerationResult{}, types.Wrap(err, types.ErrCodeAgentFailed, "openrouter generation failed")
 	}
@@ -115,13 +125,20 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, messages []domain.Messag
 		}
 	}
 
+	maxTokens := resolveMaxTokens(opts)
+
 	req := openai.ChatCompletionRequest{
-		Model:    o.model,
-		Messages: reqMessages,
-		Stream:   true,
+		Model:     o.model,
+		Messages:  reqMessages,
+		MaxTokens: maxTokens,
+		Stream:    true,
 	}
 
 	stream, err := o.client.CreateChatCompletionStream(ctx, req)
+	if retryMaxTokens, ok := affordableRetryMaxTokens(err, req.MaxTokens); ok {
+		req.MaxTokens = retryMaxTokens
+		stream, err = o.client.CreateChatCompletionStream(ctx, req)
+	}
 	if err != nil {
 		return nil, types.Wrap(err, types.ErrCodeAgentFailed, "openrouter streaming error")
 	}
@@ -132,7 +149,7 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, messages []domain.Messag
 		for {
 			response, err := stream.Recv()
 			if err != nil {
-				if err == io.EOF {
+				if err.Error() == "EOF" {
 					return
 				}
 				ch <- domain.ChatChunk{Error: err}
@@ -152,8 +169,19 @@ func (o *OpenRouterAdapter) Stream(ctx context.Context, messages []domain.Messag
 
 // HealthCheck verifies connectivity to OpenRouter.
 func (o *OpenRouterAdapter) HealthCheck(ctx context.Context) error {
-	_, err := o.client.GetModel(ctx, o.model)
-	return err
+	if strings.TrimSpace(o.model) == "" {
+		return types.New(types.ErrCodeInvalidInput, "openrouter model is not configured")
+	}
+	models, err := o.client.ListModels(ctx)
+	if err != nil {
+		return err
+	}
+	for _, model := range models.Models {
+		if model.ID == o.model {
+			return nil
+		}
+	}
+	return types.Newf(types.ErrCodeNotFound, "openrouter model %q is not available", o.model)
 }
 
 // GenerateJSON implements structured output enforcement.

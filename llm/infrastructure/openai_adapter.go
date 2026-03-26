@@ -2,7 +2,7 @@ package infrastructure
 
 import (
 	"context"
-	"io"
+	"strings"
 
 	"github.com/SecDuckOps/shared/llm/domain"
 	"github.com/SecDuckOps/shared/types"
@@ -19,6 +19,14 @@ type OpenAIAdapter struct {
 func NewOpenAIAdapter(apiKey string, model string) *OpenAIAdapter {
 	if model == "" {
 		model = openai.GPT4o // Set default
+	}
+
+	// Clean model name (e.g. "openai/model-id" -> "model-id")
+	if strings.HasPrefix(model, "openai/") {
+		model = strings.TrimPrefix(model, "openai/")
+	}
+	if strings.HasPrefix(model, "custom/") {
+		model = strings.TrimPrefix(model, "custom/")
 	}
 
 	return &OpenAIAdapter{
@@ -101,7 +109,7 @@ func (a *OpenAIAdapter) Stream(ctx context.Context, messages []domain.Message, o
 		for {
 			response, err := stream.Recv()
 			if err != nil {
-				if err == io.EOF {
+				if err.Error() == "EOF" {
 					return
 				}
 				ch <- domain.ChatChunk{Error: err}

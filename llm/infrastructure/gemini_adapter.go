@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"context"
+	"strings"
 
 	"github.com/SecDuckOps/shared/llm/domain"
 	"github.com/SecDuckOps/shared/types"
@@ -21,6 +22,17 @@ type GeminiAdapter struct {
 func NewGeminiAdapter(ctx context.Context, apiKey string, model string) (*GeminiAdapter, error) {
 	if model == "" {
 		model = "qwen/qwen3-coder:free"
+	}
+
+	// Clean model name (e.g. "google/model-id" -> "model-id")
+	if strings.HasPrefix(model, "google/") {
+		model = strings.TrimPrefix(model, "google/")
+	}
+	if strings.HasPrefix(model, "gemini/") {
+		model = strings.TrimPrefix(model, "gemini/")
+	}
+	if strings.HasPrefix(model, "custom/") {
+		model = strings.TrimPrefix(model, "custom/")
 	}
 
 	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))

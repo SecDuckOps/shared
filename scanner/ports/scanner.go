@@ -6,20 +6,27 @@ import (
 	"github.com/SecDuckOps/shared/scanner/domain"
 )
 
+// ScanOpts configures a containerized scan run
+type ScanOpts struct {
+	TargetDir   string
+	Scanner     string             // Scanner identifier e.g., "trivy", "semgrep"
+	ScannerType domain.ScannerType // Scanner category e.g., "SAST", "CONTAINER"
+	Image       string             // Docker image
+	Cmd         []string           // Override default command if needed
+	Env         []string           // Environment variables (e.g. TRIVY_QUIET=true)
+}
+
+// ScannerPort is implemented by adapters like DockerWarden to run isolated scans
+type ScannerPort interface {
+	RunScan(ctx context.Context, opts ScanOpts) (domain.ScanResult, error)
+	HealthCheck(ctx context.Context) error
+}
+
 // ScannerServicePort is the single interface the MasterAgent uses to run scans.
-// Previously backed by DockerWarden + parsers.
-// Now backed by MCP tool calls — the implementation lives in the agent's MCPScannerAdapter.
 type ScannerServicePort interface {
-	// RunScan executes one named scanner against a target and returns findings.
 	RunScan(ctx context.Context, target string, scannerName string) (domain.ScanResult, error)
-
-	// RunScanBatch executes multiple scanners in parallel.
 	RunScanBatch(ctx context.Context, target string, scannerNames []string) []ScanBatchResult
-
-	// HasScanner reports whether the named scanner is available.
 	HasScanner(scannerName string) bool
-
-	// AvailableScanners returns the names of all scanners currently available.
 	AvailableScanners() []string
 }
 
