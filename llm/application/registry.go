@@ -39,17 +39,23 @@ func (r *RegistryAdapter) Register(llm domain.LLM) {
 	r.llms[llm.Name()] = llm
 }
 
-// Get returns the registered LLM provider by name, with O(1) fallback capability.
-func (r *RegistryAdapter) Get(name string) domain.LLM {
+// Lookup returns the registered LLM provider by exact name without fallback.
+func (r *RegistryAdapter) Lookup(name string) (domain.LLM, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	// 1. Direct match
-	if provider, exists := r.llms[name]; exists {
+	provider, exists := r.llms[name]
+	return provider, exists
+}
+
+// Get returns the registered LLM provider by name, with O(1) fallback capability.
+func (r *RegistryAdapter) Get(name string) domain.LLM {
+	if provider, exists := r.Lookup(name); exists {
 		return provider
 	}
 
-	// 2. Fallback to default avoiding double locking
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	return r.llms[r.defaultProvider]
 }
 
@@ -83,7 +89,7 @@ func (r *RegistryAdapter) Default() domain.LLM {
 
 func (r *RegistryAdapter) RegisterFromConfig(cfgs map[string]domain.ProviderConfig) {
 	for name, cfg := range cfgs {
-		if cfg.APIKey == "" && name != "lmstudio" && name != "ollama" {
+		if cfg.APIKey == "" && cfg.BaseURL == "" && name != "lmstudio" && name != "ollama" {
 			continue // Skip if no API key provided (except for local providers)
 		}
 
@@ -99,6 +105,11 @@ func (r *RegistryAdapter) RegisterFromConfig(cfgs map[string]domain.ProviderConf
 			adapter, err := infrastructure.NewGeminiAdapter(context.Background(), cfg.APIKey, cfg.Model)
 			if err == nil {
 				r.Register(adapter)
+				if name != adapter.Name() {
+					r.mu.Lock()
+					r.llms[name] = adapter
+					r.mu.Unlock()
+				}
 			}
 		default:
 			// Treat everything else with a BaseURL as a custom compatible provider

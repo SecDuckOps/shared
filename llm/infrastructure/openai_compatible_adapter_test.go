@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/SecDuckOps/shared/llm/domain"
@@ -168,5 +169,64 @@ func TestOpenAICompatibleAdapterGenerateRetriesWithAffordableTokenBudget(t *test
 	}
 	if requested[1] >= requested[0] {
 		t.Fatalf("expected retry max_tokens to be lower, got %v", requested)
+	}
+}
+
+func TestNormalizeOpenAICompatibleBaseURL(t *testing.T) {
+	testCases := map[string]string{
+		"http://localhost:11434":                                   "http://localhost:11434/v1",
+		"http://localhost:11434/":                                  "http://localhost:11434/v1",
+		"http://localhost:11434/v1":                                "http://localhost:11434/v1",
+		"http://192.168.1.10:1234/api/v1/chat":                     "http://192.168.1.10:1234/api/v1",
+		"http://192.168.1.10:1234/api/v1/chat/completions":         "http://192.168.1.10:1234/api/v1",
+		"http://192.168.1.10:1234/api/v1/chat/v1/chat/completions": "http://192.168.1.10:1234/api/v1/chat/v1",
+	}
+
+	for input, want := range testCases {
+		if got := normalizeOpenAICompatibleBaseURL(input); got != want {
+			t.Fatalf("normalizeOpenAICompatibleBaseURL(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestOpenAICompatibleAdapterGenerateNormalizesEndpointSuffixes(t *testing.T) {
+	var requestedPath string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestedPath = r.URL.Path
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":      "chatcmpl-test",
+			"object":  "chat.completion",
+			"created": 1,
+			"model":   "test-model",
+			"choices": []map[string]any{
+				{
+					"index": 0,
+					"message": map[string]any{
+						"role":    "assistant",
+						"content": "ok",
+					},
+					"finish_reason": "stop",
+				},
+			},
+			"usage": map[string]any{
+				"prompt_tokens":     1,
+				"completion_tokens": 1,
+				"total_tokens":      2,
+			},
+		})
+	}))
+	defer server.Close()
+
+	baseURL := strings.TrimRight(server.URL, "/") + "/api/v1/chat"
+	llm := NewOpenAICompatibleAdapter("profile:lmstdio", "test-key", "test-model", baseURL)
+	_, err := llm.Generate(context.Background(), []domain.Message{
+		{Role: domain.RoleUser, Content: "hello"},
+	}, nil)
+	if err != nil {
+		t.Fatalf("Generate() returned error: %v", err)
+	}
+	if requestedPath != "/api/v1/chat/completions" {
+		t.Fatalf("expected normalized request path %q, got %q", "/api/v1/chat/completions", requestedPath)
 	}
 }

@@ -32,6 +32,7 @@ type LLM interface {
 
 type LLMRegistry interface {
 	Register(llm LLM)
+	Lookup(name string) (LLM, bool)
 	Get(name string) LLM
 	MustGet(name string) LLM
 	List() []string

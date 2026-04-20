@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -73,6 +74,71 @@ func affordableRetryMaxTokens(err error, requested int) (int, bool) {
 		return 0, false
 	}
 	return retryMaxTokens, true
+}
+
+func normalizeOpenAICompatibleBaseURL(baseURL string) string {
+	trimmed := strings.TrimSpace(baseURL)
+	if trimmed == "" {
+		return ""
+	}
+
+	parsed, err := url.Parse(trimmed)
+	if err != nil || parsed.Host == "" {
+		return ensureV1BaseURL(trimmed)
+	}
+
+	segments := pathSegments(parsed.Path)
+	for len(segments) > 0 {
+		switch {
+		case len(segments) >= 2 && strings.EqualFold(segments[len(segments)-2], "chat") && strings.EqualFold(segments[len(segments)-1], "completions"):
+			segments = segments[:len(segments)-2]
+		case strings.EqualFold(segments[len(segments)-1], "chat"):
+			segments = segments[:len(segments)-1]
+		default:
+			goto normalized
+		}
+	}
+
+normalized:
+	parsed.Path = ensureV1Path(segments)
+	parsed.RawPath = ""
+	return strings.TrimRight(parsed.String(), "/")
+}
+
+func pathSegments(path string) []string {
+	if path == "" || path == "/" {
+		return nil
+	}
+	rawSegments := strings.Split(strings.Trim(path, "/"), "/")
+	segments := make([]string, 0, len(rawSegments))
+	for _, segment := range rawSegments {
+		if segment == "" {
+			continue
+		}
+		segments = append(segments, segment)
+	}
+	return segments
+}
+
+func ensureV1Path(segments []string) string {
+	if len(segments) == 0 {
+		return "/v1"
+	}
+	if strings.EqualFold(segments[len(segments)-1], "v1") {
+		return "/" + strings.Join(segments, "/")
+	}
+	return "/" + strings.Join(append(segments, "v1"), "/")
+}
+
+func ensureV1BaseURL(baseURL string) string {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if baseURL == "" {
+		return ""
+	}
+	if strings.HasSuffix(strings.ToLower(baseURL), "/v1") {
+		return baseURL
+	}
+	return baseURL + "/v1"
 }
 
 // generateJSON handles structured output enforcement by stripping markdown and unmarshaling.

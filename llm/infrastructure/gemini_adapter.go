@@ -48,7 +48,7 @@ func NewGeminiAdapter(ctx context.Context, apiKey string, model string) (*Gemini
 
 // Name identifies this LLM port
 func (g *GeminiAdapter) Name() string {
-	return "Gemini"
+	return "gemini"
 }
 
 // Model returns the actually used model

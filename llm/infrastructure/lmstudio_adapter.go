@@ -26,7 +26,7 @@ func NewLMStudioAdapter(apiKey string, model string, baseURL string) *LMStudioAd
 	if baseURL == "" {
 		baseURL = "http://localhost:1234/v1"
 	}
-	config.BaseURL = baseURL
+	config.BaseURL = normalizeOpenAICompatibleBaseURL(baseURL)
 
 	if model == "" {
 		model = "local-model" // LM Studio usually uses whatever model is currently loaded

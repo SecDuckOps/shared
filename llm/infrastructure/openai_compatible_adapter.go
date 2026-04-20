@@ -25,15 +25,7 @@ func NewOpenAICompatibleAdapter(name, apiKey, model, baseURL string) domain.LLM 
 	// 1. Configure the OpenAI client with a custom BaseURL
 	config := openai.DefaultConfig(apiKey)
 	if baseURL != "" {
-		// Ensure /v1 suffix for compatibility if missing (common for local providers like Ollama/LMStudio)
-		if !strings.HasSuffix(baseURL, "/v1") && !strings.HasSuffix(baseURL, "/v1/") {
-			if strings.HasSuffix(baseURL, "/") {
-				baseURL = baseURL + "v1"
-			} else {
-				baseURL = baseURL + "/v1"
-			}
-		}
-		config.BaseURL = baseURL
+		config.BaseURL = normalizeOpenAICompatibleBaseURL(baseURL)
 	}
 
 	// Add generic caching headers
@@ -46,8 +38,8 @@ func NewOpenAICompatibleAdapter(name, apiKey, model, baseURL string) domain.LLM 
 	// Strip the provider name prefix if it exists (e.g. "openrouter/model-id" -> "model-id")
 	cleanModel := model
 	prefix := name + "/"
-	if strings.HasPrefix(model, prefix) {
-		cleanModel = strings.TrimPrefix(model, prefix)
+	if strings.HasPrefix(cleanModel, prefix) {
+		cleanModel = strings.TrimPrefix(cleanModel, prefix)
 	}
 
 	// 2. Return the adapter which satisfies domain.LLM
